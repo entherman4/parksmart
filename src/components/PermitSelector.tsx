@@ -1,7 +1,10 @@
 import { PermitType } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 
-const PERMITS: { value: PermitType; label: string; desc: string }[] = [
+export type PermitFilter = PermitType | 'ALL'
+
+const PERMITS: { value: PermitFilter; label: string; desc: string }[] = [
+  { value: 'ALL', label: 'All lots', desc: 'Show every lot' },
   { value: 'A', label: 'Lot A',     desc: 'All surface lots' },
   { value: 'B', label: 'Lot B',     desc: 'Selected surface lots' },
   { value: 'C', label: 'Lot C',     desc: 'Commuter lots' },
@@ -10,16 +13,17 @@ const PERMITS: { value: PermitType; label: string; desc: string }[] = [
 ]
 
 interface Props {
-  selected: PermitType
-  onChange: (p: PermitType) => void
+  selected: PermitFilter
+  onChange: (p: PermitFilter) => void
 }
 
 export default function PermitSelector({ selected, onChange }: Props) {
   const { updatePermit } = useAuth()
 
-  function handleChange(p: PermitType) {
+  function handleChange(p: PermitFilter) {
     onChange(p)
-    updatePermit(p) // persist to Supabase profile
+    // Only real permits are saved to the profile; "All lots" is just a view
+    if (p !== 'ALL') updatePermit(p)
   }
 
   return (
@@ -29,7 +33,7 @@ export default function PermitSelector({ selected, onChange }: Props) {
         textTransform: 'uppercase', letterSpacing: '1px',
         color: '#888', marginBottom: 8
       }}>
-        Your permit
+        Filter by permit
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {PERMITS.map(p => (

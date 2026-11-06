@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase, Report, LotStatus } from './supabase'
 
 export function useReports(lotId?: string) {
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
+  // Unique channel name per hook instance (supabase reuses channels by name)
+  const channelId = useRef(`reports-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
     fetchReports()
 
     // Real-time subscription — new reports appear instantly
     const channel = supabase
-      .channel('reports-realtime')
+      .channel(channelId.current)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'reports' },

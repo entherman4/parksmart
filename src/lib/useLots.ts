@@ -45,7 +45,7 @@ export function useLots(permitFilter?: PermitType) {
     ? lots
         .filter(l => l.permits.includes(permitFilter))
         .sort((a, b) => occupancyPct(a) - occupancyPct(b))
-    : lots.sort((a, b) => occupancyPct(a) - occupancyPct(b))
+    : [...lots].sort((a, b) => occupancyPct(a) - occupancyPct(b))
 
   return { lots: filtered, allLots: lots, loading, error, refetch: fetchLots }
 }

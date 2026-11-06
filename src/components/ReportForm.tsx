@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Lot, LotStatus, STATUS_LABELS } from '../lib/supabase'
-import { useReports } from '../lib/useReports'
 
 interface Props {
   lots: Lot[]
   defaultLotId?: string
   onSuccess?: () => void
+  onSubmit: (lotId: string, status: LotStatus, note: string) => Promise<{ error: string | null }>
 }
 
 const STATUS_OPTIONS: { value: LotStatus; emoji: string; color: string }[] = [
@@ -17,8 +17,7 @@ const STATUS_OPTIONS: { value: LotStatus; emoji: string; color: string }[] = [
   { value: 'blocked',     emoji: '🚧', color: '#FCE8E6' },
 ]
 
-export default function ReportForm({ lots, defaultLotId, onSuccess }: Props) {
-  const { submitReport } = useReports()
+export default function ReportForm({ lots, defaultLotId, onSuccess, onSubmit }: Props) {
   const [lotId, setLotId]     = useState(defaultLotId ?? lots[0]?.id ?? '')
   const [status, setStatus]   = useState<LotStatus>('available')
   const [note, setNote]       = useState('')
@@ -26,13 +25,18 @@ export default function ReportForm({ lots, defaultLotId, onSuccess }: Props) {
   const [error, setError]     = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  // If lots finish loading after the form mounts, pick the first one
+  useEffect(() => {
+    if (!lotId && lots[0]) setLotId(lots[0].id)
+  }, [lots, lotId])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!lotId) return
     setLoading(true)
     setError(null)
 
-    const { error } = await submitReport(lotId, status, note)
+    const { error } = await onSubmit(lotId, status, note)
     setLoading(false)
 
     if (error) {

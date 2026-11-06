@@ -3,9 +3,8 @@ import dynamic from 'next/dynamic'
 import { useAuth } from '../lib/auth'
 import { useLots } from '../lib/useLots'
 import { useReports } from '../lib/useReports'
-import { PermitType } from '../lib/supabase'
 import LotCard from '../components/LotCard'
-import PermitSelector from '../components/PermitSelector'
+import PermitSelector, { PermitFilter } from '../components/PermitSelector'
 import ReportForm from '../components/ReportForm'
 import ReportFeed from '../components/ReportFeed'
 import LoginPage from './login'
@@ -15,18 +14,18 @@ const CampusMap = dynamic(() => import('../components/CampusMap'), { ssr: false 
 type Tab = 'map' | 'report'
 
 export default function Home() {
-  const { user, profile, loading, signOut } = useAuth()
-  const [permit, setPermit]           = useState<PermitType>('A')
+  const { user, loading, signOut } = useAuth()
+  const [permit, setPermit]           = useState<PermitFilter>('ALL')
   const [selectedLotId, setSelectedLotId] = useState<string | null>(null)
   const [tab, setTab]                 = useState<Tab>('map')
 
-  const { lots, allLots, loading: lotsLoading } = useLots(permit)
+  const { lots, allLots, loading: lotsLoading } = useLots(permit === 'ALL' ? undefined : permit)
   const { reports, loading: reportsLoading, submitReport, upvoteReport } = useReports()
 
   if (loading) return <LoadingScreen />
   if (!user) return <LoginPage />
 
-  const effectivePermit = profile?.permit_type ?? permit
+  const effectivePermit: PermitFilter = permit
 
   return (
     <div style={{
@@ -117,7 +116,11 @@ export default function Home() {
                   textTransform: 'uppercase', letterSpacing: '1px',
                   color: '#888', marginBottom: 10, padding: '0 2px',
                 }}>
-                  {lotsLoading ? 'Loading lots…' : `${lots.length} lots with ${effectivePermit} permit`}
+                  {lotsLoading
+                    ? 'Loading lots…'
+                    : effectivePermit === 'ALL'
+                      ? `${lots.length} lots`
+                      : `${lots.length} lots with ${effectivePermit} permit`}
                 </div>
 
                 {lots.map((lot, i) => (
@@ -164,6 +167,7 @@ export default function Home() {
                   lots={allLots}
                   defaultLotId={selectedLotId ?? undefined}
                   onSuccess={() => {}}
+                  onSubmit={submitReport}
                 />
               </div>
 
